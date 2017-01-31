@@ -46,5 +46,5 @@ dependencies {
 bootRun {
     // Update path to the directory that contains your
     // eCommerce.properties file
-	jvmArgs = ["-Dproperties.home=PATH_TO_PROPERTIES_DIRECTORY"]
+	jvmArgs = ["-Dproperties.home=/Users/narcis/Desktop/TreehouseJavaProjects/javaweb-ecommerce/src/main/resources"]
 }
