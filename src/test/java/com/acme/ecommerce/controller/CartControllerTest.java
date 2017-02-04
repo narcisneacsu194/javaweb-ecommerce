@@ -55,7 +55,7 @@ public class CartControllerTest {
 	}
 
 	@Test
-	public void viewCartTest() throws Exception {
+	public void viewCart_ifPurchasesExistDisplayProductsWithTheirQuantityAndSubtotal() throws Exception {
 		Product product = productBuilder();
 
 		when(productService.findById(1L)).thenReturn(product);
@@ -73,16 +73,16 @@ public class CartControllerTest {
 	}
 
 	@Test
-	public void viewCartNoPurchasesTest() throws Exception {
+	public void viewCart_ifNoPurchasesReturnErrorPage() throws Exception {
 
 		when(sCart.getPurchase()).thenReturn(null);
 		mockMvc.perform(MockMvcRequestBuilders.get("/cart")).andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/error"));
+				.andExpect(redirectedUrl("/view-cart-error"));
 	}
 
 	@Test
-	public void addToCartTest() throws Exception {
+	public void addToCart_addingAQuantityOfProductsGreaterThanTheActualOneThrowsAFlashMessageOnTheSamePage() throws Exception {
 		Product product = productBuilder();
 
 		when(productService.findById(1L)).thenReturn(product);
@@ -95,17 +95,17 @@ public class CartControllerTest {
 	}
 
 	@Test
-	public void addUnknownToCartTest() throws Exception {
+	public void addToCart_addingAnNonexistentProductToTheCartReturnsErrorPage() throws Exception {
 		when(productService.findById(1L)).thenReturn(null);
 
 		mockMvc.perform(MockMvcRequestBuilders.post("/cart/add").param("quantity", "1").param("productId", "1"))
 				.andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/error"));
+				.andExpect(redirectedUrl("/add-product-error"));
 	}
 
 	@Test
-	public void updateCartValidationTest() throws Exception {
+	public void updateCart_updatingProductWithAGreaterQuantityThanTheActualThrowsAFlashMessageOnTheSamePage() throws Exception {
 		Product product = productBuilder();
 
 		when(productService.findById(1L)).thenReturn(product);
@@ -122,28 +122,29 @@ public class CartControllerTest {
 	}
 
 	@Test
-	public void updateUnknownCartTest() throws Exception {
+	public void updateCart_updatingNonexistingProductQuantityReturnsErrorPage() throws Exception {
 		when(productService.findById(1L)).thenReturn(null);
 
 		mockMvc.perform(MockMvcRequestBuilders.post("/cart/update").param("newQuantity", "2").param("productId", "1"))
 				.andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/error"));
+				.andExpect(redirectedUrl("/product-error"));
 	}
 
 	@Test
-	public void updateInvalidCartTest() throws Exception {
-
+	public void updateCart_updatingQuantityOfProductWhenNoPurchaseExistReturnsErrorPage() throws Exception {
+		Product product = productBuilder();
+		when(productService.findById(1L)).thenReturn(product);
 		when(sCart.getPurchase()).thenReturn(null);
 
 		mockMvc.perform(MockMvcRequestBuilders.post("/cart/update").param("newQuantity", "2").param("productId", "1"))
 				.andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/error"));
+				.andExpect(redirectedUrl("/view-cart-error"));
 	}
 
 	@Test
-	public void removeFromCartTest() throws Exception {
+	public void removeFromCart_removingProductIsntShowedInTheCartAnymore() throws Exception {
 		Product product = productBuilder();
 
 		Product product2 = productBuilder();
@@ -177,29 +178,31 @@ public class CartControllerTest {
 				.andExpect(status().is3xxRedirection())
 				.andExpect(redirectedUrl("/cart"))
 				.andExpect(flash().attributeExists("flash"));
+
 	}
 
 	@Test
-	public void removeUnknownCartTest() throws Exception {
+	public void removeFromCart_tryingToRemoveNonexistenProductReturnsErrorPage() throws Exception {
 		when(productService.findById(1L)).thenReturn(null);
 
 		mockMvc.perform(MockMvcRequestBuilders.post("/cart/remove").param("productId", "1")).andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/error"));
+				.andExpect(redirectedUrl("/product-error"));
 	}
 
 	@Test
-	public void removeInvalidCartTest() throws Exception {
-
+	public void removeFromCart_tryingToRemoveProductFromCartWhenNoPurchaseExistReturnsErrorPage() throws Exception {
+		Product product = productBuilder();
+		when(productService.findById(1L)).thenReturn(product);
 		when(sCart.getPurchase()).thenReturn(null);
 
 		mockMvc.perform(MockMvcRequestBuilders.post("/cart/remove").param("productId", "1")).andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/error"));
+				.andExpect(redirectedUrl("/view-cart-error"));
 	}
 
 	@Test
-	public void removeLastFromCartTest() throws Exception {
+	public void removeFromCart_removingLastProductFromCartRedirectsToProductIndexPage() throws Exception {
 		Product product = productBuilder();
 
 		when(productService.findById(1L)).thenReturn(product);
@@ -217,7 +220,7 @@ public class CartControllerTest {
 	}
 
 	@Test
-	public void emptyCartTest() throws Exception {
+	public void emptyCart_emptyingTheCartOfAllProductsRedirectsToProductIndexPage() throws Exception {
 		Product product = productBuilder();
 
 		Product product2 = productBuilder();
@@ -255,13 +258,13 @@ public class CartControllerTest {
 	}
 
 	@Test
-	public void emptyInvalidCartTest() throws Exception {
+	public void emptyCart_tryingToEmptyCartWithNoExistentPurchasesReturnsErrorPage() throws Exception {
 
 		when(sCart.getPurchase()).thenReturn(null);
 
 		mockMvc.perform(MockMvcRequestBuilders.post("/cart/empty")).andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/error"));
+				.andExpect(redirectedUrl("/view-cart-error"));
 	}
 
 	private Product productBuilder() {

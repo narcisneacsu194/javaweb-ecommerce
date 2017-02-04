@@ -59,7 +59,7 @@ public class CartController {
     		model.addAttribute("subTotal", subTotal);
     	} else {
     		logger.error("No purchases Found for session ID=" + session.getId());
-    		return "redirect:/error";
+    		return "redirect:/view-cart-error";
     	}
         return "cart";
     }
@@ -116,7 +116,7 @@ public class CartController {
     		sCart.setPurchase(purchaseService.save(purchase));
 		} else {
 			logger.error("Attempt to add unknown product: " + productId);
-			redirect.setUrl("/error");
+			redirect.setUrl("/add-product-error");
 		}
 
     	return redirect;
@@ -135,7 +135,7 @@ public class CartController {
     		Purchase purchase = sCart.getPurchase();
     		if (purchase == null) {
     			logger.error("Unable to find shopping cart for update");
-    			redirect.setUrl("/error");
+    			redirect.setUrl("/view-cart-error");
     		} else {
     			for (ProductPurchase pp : purchase.getProductPurchases()) {
     				if (pp.getProduct() != null) {
@@ -167,7 +167,7 @@ public class CartController {
     		sCart.setPurchase(purchaseService.save(purchase));
     	} else {
     		logger.error("Attempt to update on non-existent product");
-    		redirect.setUrl("/error");
+    		redirect.setUrl("/product-error");
     	}
     	
     	return redirect;
@@ -202,11 +202,11 @@ public class CartController {
         		}
     		} else {
     			logger.error("Unable to find shopping cart for update");
-    			redirect.setUrl("/error");
+    			redirect.setUrl("/view-cart-error");
     		}
     	} else {
     		logger.error("Attempt to update on non-existent product");
-    		redirect.setUrl("/error");
+    		redirect.setUrl("/product-error");
     	}
 
     	return redirect;
@@ -229,9 +229,21 @@ public class CartController {
 			redirectAttributes.addFlashAttribute("flash", new FlashMessage("The cart has been completely emptied.", FlashMessage.Status.SUCCESS));
 		} else {
 			logger.error("Unable to find shopping cart for update");
-			redirect.setUrl("/error");
+			redirect.setUrl("/view-cart-error");
 		}
 		
     	return redirect;
     }
+
+    @RequestMapping(path = "/view-cart-error")
+	public String displayViewCartError(Model model){
+		model.addAttribute("message", "There is no purchase available inside the cart.");
+		return "error";
+	}
+
+	@RequestMapping(path = "/add-product-error")
+	public String displayAddProductError(Model model){
+		model.addAttribute("message", "The product you want to add to the cart doesn't exist.");
+		return "error";
+	}
 }

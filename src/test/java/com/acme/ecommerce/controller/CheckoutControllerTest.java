@@ -49,7 +49,7 @@ public class CheckoutControllerTest {
 	}
 
 	@Test
-	public void couponTest() throws Exception {
+	public void checkoutCoupon_returnsCouponFieldAlongWithSubtotalInfo() throws Exception {
 		Product product = productBuilder();
 
 		when(productService.findById(1L)).thenReturn(product);
@@ -66,11 +66,11 @@ public class CheckoutControllerTest {
 	}
 
 	@Test
-	public void noCartCouponTest() throws Exception {
+	public void checkoutCoupon_accessingCouponCodePageWithNoExistentPurchaseReturnsErrorPage() throws Exception {
 		when(sCart.getPurchase()).thenReturn(null);
 		mockMvc.perform(MockMvcRequestBuilders.get("/checkout/coupon")).andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/error"));
+				.andExpect(redirectedUrl("/view-cart-error"));
 	}
 
 	@Test
@@ -95,7 +95,7 @@ public class CheckoutControllerTest {
 	}
 
 	@Test
-	public void shippingTest() throws Exception {
+	public void checkoutShipping_returnsShippingInfoPageAlongWithReducedByCouponCodeSubTotal() throws Exception {
 		Product product = productBuilder();
 
 		when(productService.findById(1L)).thenReturn(product);
@@ -116,15 +116,15 @@ public class CheckoutControllerTest {
 	}
 
 	@Test
-	public void noCartShippingTest() throws Exception {
+	public void checkoutShipping_tryingToAccessShippingInfoWithoutExistingPurchasesReturnsErrorPage() throws Exception {
 		when(sCart.getPurchase()).thenReturn(null);
 		mockMvc.perform(MockMvcRequestBuilders.get("/checkout/shipping")).andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/error"));
+				.andExpect(redirectedUrl("/view-cart-error"));
 	}
 
 	@Test
-	public void postShippingTestValidationSuccess() throws Exception {
+	public void postShipping_submittingValidInformationFromShippingFieldsRedirectsToBillingInfoPage() throws Exception {
 
 		Product product = productBuilder();
 
@@ -147,7 +147,7 @@ public class CheckoutControllerTest {
 	}
 
 	@Test
-	public void postShippingTestValidationFail() throws Exception {
+	public void postShipping_submittingInvalidInformationFromShippingFieldsRedirectsToTheSamePageAndShowsValidationErrors() throws Exception {
 
 		Product product = productBuilder();
 
@@ -169,18 +169,18 @@ public class CheckoutControllerTest {
 	}
 
 	@Test
-	public void noCartPostShippingTest() throws Exception {
+	public void postShipping_submittingShippingInformationWhileNoPurchaseExistInSessionReturnsErrorPage() throws Exception {
 		when(sCart.getPurchase()).thenReturn(null);
 		mockMvc.perform(MockMvcRequestBuilders.post("/checkout/shipping").param("firstName", "john")
 				.param("lastName", "smith").param("streetAddress", "123 main st.").param("city", "centerville")
 				.param("state", "WA").param("zipCode", "12345").param("country", "USA")
 				.param("phoneNumber", "1234567890").param("email", "ab@c.com")).andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/error"));
+				.andExpect(redirectedUrl("/view-cart-error"));
 	}
 
 	@Test
-	public void billingTest() throws Exception {
+	public void checkoutBilling_returnsBillingInformationFieldsSuccessfullyAlongWithSubtotal() throws Exception {
 		Product product = productBuilder();
 
 		when(productService.findById(1L)).thenReturn(product);
@@ -203,15 +203,15 @@ public class CheckoutControllerTest {
 	}
 
 	@Test
-	public void noCartBillingTest() throws Exception {
+	public void checkoutBilling_tryingToAccessBillingInformationWhileNoPurchaseExistInCartReturnsErrorPage() throws Exception {
 		when(sCart.getPurchase()).thenReturn(null);
 		mockMvc.perform(MockMvcRequestBuilders.get("/checkout/billing")).andDo(print())
 			.andExpect(status().is3xxRedirection())
-			.andExpect(redirectedUrl("/error"));
+			.andExpect(redirectedUrl("/view-cart-error"));
 	}
 
 	@Test
-	public void postBillingTestValidationSuccess() throws Exception {
+	public void postBilling_submittingValidBillingInformationRedirectsToConfirmationPage() throws Exception {
 		Product product = productBuilder();
 
 		when(productService.findById(1L)).thenReturn(product);
@@ -237,7 +237,7 @@ public class CheckoutControllerTest {
 	}
 
 	@Test
-	public void postBillingTestValidationFail() throws Exception {
+	public void postBilling_submittingInvalidBillingInformationRedirectsToSamePageAndShowsValidationErrors() throws Exception {
 		Product product = productBuilder();
 
 		when(productService.findById(1L)).thenReturn(product);
@@ -258,7 +258,7 @@ public class CheckoutControllerTest {
 	}
 
 	@Test
-	public void noCartPostBillingTest() throws Exception {
+	public void postBilling_submittingBillingInformationWhileNoPurchasesExistInCartReturnsErrorPage() throws Exception {
 		when(sCart.getPurchase()).thenReturn(null);
 		mockMvc.perform(MockMvcRequestBuilders.post("/checkout/billing").param("firstName", "john")
 				.param("lastName", "smith").param("streetAddress", "123 main st.").param("city", "centerville")
@@ -268,11 +268,11 @@ public class CheckoutControllerTest {
 				.param("creditCardExpMonth", "5").param("creditCardExpYear", "2016").param("creditCardCVC", "123")
 				.param("billingAddressSame", "false")).andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/error"));
+				.andExpect(redirectedUrl("/view-cart-error"));
 	}
 
 	@Test
-	public void confirmationTest() throws Exception {
+	public void checkoutConfirmation_returnsOrderConfirmationInformationSuccessfully() throws Exception {
 		Product product = productBuilder();
 
 		when(productService.findById(1L)).thenReturn(product);
@@ -293,15 +293,15 @@ public class CheckoutControllerTest {
 	}
 
 	@Test
-	public void noCartConfirmationTest() throws Exception {
+	public void checkoutConfirmation_accessingOrderConfirmationInformationWhileNoPurchasesExistInCartReturnsErrorPage() throws Exception {
 		when(sCart.getPurchase()).thenReturn(null);
 		mockMvc.perform(MockMvcRequestBuilders.get("/checkout/confirmation")).andDo(print())
 			.andExpect(status().is3xxRedirection())
-			.andExpect(redirectedUrl("/error"));
+			.andExpect(redirectedUrl("/view-cart-error"));
 	}
 
 	@Test
-	public void emailTest() throws Exception {
+	public void getFile_successfulltDownloadsTheOrderConfirmationEmailReceipt() throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders.get("/checkout/email")).andDo(print()).andExpect(status().isOk());
 	}
 

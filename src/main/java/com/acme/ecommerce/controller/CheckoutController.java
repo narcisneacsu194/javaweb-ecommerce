@@ -48,10 +48,9 @@ public class CheckoutController {
 	@RequestMapping("/coupon")
 	String checkoutCoupon(Model model) {
     	Purchase purchase = sCart.getPurchase();
-    	BigDecimal subTotal = new BigDecimal(0);
+    	BigDecimal subTotal;
     	CouponCode couponCode = sCart.getCouponCode();
-    	
-    	model.addAttribute("purchase", purchase);
+
     	if (purchase != null) {
     		
     		if (couponCode == null) {
@@ -59,18 +58,19 @@ public class CheckoutController {
     		}
     		
     		subTotal = computeSubtotal(purchase, couponCode);
-    		
+
+			model.addAttribute("purchase", purchase);
     		model.addAttribute("subTotal", subTotal);
     		model.addAttribute("couponCode", couponCode);
     	} else {
     		logger.error("No purchases Found!");
-    		return("redirect:/error");
+    		return("redirect:/view-cart-error");
     	}
 		return "checkout_1";
 	}
 
 	@RequestMapping(path="/coupon", method = RequestMethod.POST)
-	String postCouponCode(Model model, @ModelAttribute(value="couponCode") @Valid CouponCode couponCode, BindingResult result,
+	String postCouponCode(@ModelAttribute(value="couponCode") @Valid CouponCode couponCode, BindingResult result,
 						  RedirectAttributes redirectAttributes) {
 		if(result.hasErrors()){
 			redirectAttributes.addFlashAttribute("flash",
@@ -86,14 +86,14 @@ public class CheckoutController {
 	@RequestMapping(path="/shipping", method=RequestMethod.GET)
 	String checkoutShipping(Model model) {
     	Purchase purchase = sCart.getPurchase();
-    	BigDecimal subTotal = new BigDecimal(0);
+    	BigDecimal subTotal;
     	CouponCode couponCode = sCart.getCouponCode();
     	
     	model.addAttribute("purchase", purchase);
     	if (purchase != null) {
     		subTotal = computeSubtotal(purchase, couponCode);
     		
-    		if (!model.containsAttribute("shippingAddress")) { // so we don't overwrite any errors...
+    		if (!model.containsAttribute("shippingAddress")) {
 	    		Address modelAddress;
 	    		if (purchase.getShippingAddress() != null) {
 	    			modelAddress = purchase.getShippingAddress();
@@ -107,7 +107,7 @@ public class CheckoutController {
     		model.addAttribute("LIST_STATES", LIST_STATES);
     	} else {
     		logger.error("No purchases Found!");
-    		return("redirect:/error");
+    		return("redirect:/view-cart-error");
     	}
 		return "checkout_2";
 	}
@@ -119,7 +119,7 @@ public class CheckoutController {
     		logger.error("Errors on fields: " + result.getFieldErrorCount());
     		redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.shippingAddress", result);
     		redirectAttributes.addFlashAttribute("shippingAddress", shippingAddress);
-    		return String.format("redirect:shipping");
+    		return "redirect:shipping";
 		} else {
 	    	Purchase purchase = sCart.getPurchase();
 			if (purchase != null) {
@@ -127,7 +127,7 @@ public class CheckoutController {
 				sCart.setPurchase(purchaseService.save(purchase));
 			} else {
 	    		logger.error("No purchases Found!");
-	    		return("redirect:/error");
+	    		return("redirect:/view-cart-error");
 	    	}
 		}
    	
@@ -137,14 +137,14 @@ public class CheckoutController {
 	@RequestMapping("/billing")
 	String checkoutBilling(Model model) {
     	Purchase purchase = sCart.getPurchase();
-    	BigDecimal subTotal = new BigDecimal(0);
-    	BigDecimal shippingCost = new BigDecimal(0);
+    	BigDecimal subTotal;
+    	BigDecimal shippingCost;
     	CouponCode couponCode = sCart.getCouponCode();
     	
     	model.addAttribute("purchase", purchase);
     	if (purchase != null) {
     		
-    		if (!model.containsAttribute("billingObject")) { // so we don't overwrite any errors...
+    		if (!model.containsAttribute("billingObject")) {
 	    		CombinedBilling combinedBilling = new CombinedBilling();
 	    		if (purchase.getBillingAddress() != null) {
 	    			combinedBilling.setBillingAddressSame(purchase.isBillingAddressSame());
@@ -174,7 +174,7 @@ public class CheckoutController {
     		model.addAttribute("LIST_YEARS", LIST_YEARS);
     	} else {
     		logger.error("No purchases Found!");
-    		return("redirect:/error");
+    		return("redirect:/view-cart-error");
     	}
 		return "checkout_3";
 	}
@@ -186,7 +186,7 @@ public class CheckoutController {
 		if(result.hasErrors()) {
     		redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.billingObject", result);
     		redirectAttributes.addFlashAttribute("billingObject", combinedBilling);
-    		return String.format("redirect:billing");
+    		return "redirect:billing";
 		} else {
 			Purchase purchase = sCart.getPurchase();
 			if (purchase != null) {
@@ -216,7 +216,7 @@ public class CheckoutController {
 				sCart.setPurchase(purchaseService.save(purchase));
 			} else {
 	    		logger.error("No purchases Found!");
-	    		return("redirect:/error");
+	    		return("redirect:/view-cart-error");
 	    	}
 		}
    	
@@ -226,8 +226,8 @@ public class CheckoutController {
 	@RequestMapping("/confirmation")
 	String checkoutConfirmation(Model model) {
     	Purchase purchase = sCart.getPurchase();
-    	BigDecimal subTotal = new BigDecimal(0);
-       	BigDecimal shippingCost = new BigDecimal(0);
+    	BigDecimal subTotal;
+       	BigDecimal shippingCost;
     	CouponCode couponCode = sCart.getCouponCode();
     	
     	model.addAttribute("purchase", purchase);
@@ -246,7 +246,7 @@ public class CheckoutController {
     		model.addAttribute("creditCard", getHiddenCreditCardNumber(purchase.getCreditCardNumber()));
     	} else {
     		logger.error("No purchases Found!");
-    		return("redirect:/error");
+    		return("redirect:/view-cart-error");
     	}
     	
 		return "order_confirmation";
@@ -266,21 +266,13 @@ public class CheckoutController {
 	
 	@RequestMapping(value = "/email", method = RequestMethod.GET)
 	public void getFile(HttpServletResponse response) {
-		// simulating an email receipt
 		try {
-			// Prepare the Thymeleaf evaluation context
 	        final Context ctx = new Context();
 
 	    	Purchase purchase = sCart.getPurchase();
-	    	BigDecimal subTotal = new BigDecimal(0);
-	       	BigDecimal shippingCost = new BigDecimal(0);
-	    	CouponCode couponCode = sCart.getCouponCode();
 	    	
 	    	ctx.setVariable("purchase", purchase);
 	    	if (purchase != null) {
-	    		subTotal = computeSubtotal(purchase, couponCode);
-	    		shippingCost = computeShippingCost(purchase);
-	    		BigDecimal orderTotal = subTotal.add(shippingCost);
 	    		
 	    		ctx.setVariable("orderNumber", purchase.getOrderNumber());
 	    		ctx.setVariable("shippingAddress", purchase.getShippingAddress());
@@ -299,8 +291,7 @@ public class CheckoutController {
 	    	} else {
 	    		logger.error("No purchases Found!");
 	    	}
-	    	
-	    	//Order completed, reset in case user wants to order again
+
 	    	sCart.setCouponCode(null);
 	    	sCart.setPurchase(null);
 	    } catch (IOException ex) {

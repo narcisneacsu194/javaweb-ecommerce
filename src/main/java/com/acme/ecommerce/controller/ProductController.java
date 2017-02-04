@@ -62,9 +62,6 @@ public class ProductController {
 			}
 			model.addAttribute("subTotal", subTotal);
 		}
-		// Evaluate page. If requested parameter is null or less than 0 (to
-		// prevent exception), return initial size. Otherwise, return value of
-		// param. decreased by 1.
 		int evalPage = (page == null || page < 1) ? INITIAL_PAGE : page - 1;
     	
     	Page<Product> products = productService.findAll(new PageRequest(evalPage, PAGE_SIZE));
@@ -97,7 +94,7 @@ public class ProductController {
     		model.addAttribute("productPurchase", productPurchase);
     	} else {
     		logger.error("Product " + id + " Not Found!");
-    		return "redirect:/error";
+    		return "redirect:/product-error";
     	}
 
         return "product_detail";
@@ -133,8 +130,9 @@ public class ProductController {
     	return("about");
     }
 
-    @RequestMapping(path = "/error")
-	public String displayError(){
+    @RequestMapping(path = "/product-error")
+	public String displayProductError(Model model){
+		model.addAttribute("message", "The product wasn't found.");
 		return "error";
 	}
 }

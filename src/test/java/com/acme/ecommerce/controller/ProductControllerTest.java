@@ -53,7 +53,7 @@ public class ProductControllerTest {
 	}
 
 	@Test
-	public void getIndex() throws Exception {
+	public void index_returnListOfProductsSuccessfullyAndSubTotal() throws Exception {
 		
 		Product product = productBuilder();
 		
@@ -79,7 +79,7 @@ public class ProductControllerTest {
 	}
 
 	@Test
-	public void getProductDetail() throws Exception {
+	public void productDetail_returnsProductDetailSuccessfullyAlongWithSubTotal() throws Exception {
 		Product product = productBuilder();
 		product.setFullImageName("fork.jpg");
 
@@ -98,15 +98,15 @@ public class ProductControllerTest {
 	}
 	
 	@Test
-	public void getProductDetailInvalidId() throws Exception {
+	public void productDetail_tryingToAccessNonExistentProductDetailPageReturnsErrorPage() throws Exception {
 		when(productService.findById(1L)).thenReturn(null);
 		mockMvc.perform(MockMvcRequestBuilders.get("/product/detail/1"))
 			.andExpect(status().is3xxRedirection())
-		    .andExpect(redirectedUrl("/error"));
+		    .andExpect(redirectedUrl("/product-error"));
 	}
 
 	@Test
-	public void getProductImage() throws Exception {
+	public void productImage_downloadsImageFileSuccessfully() throws Exception {
 
 		Product product = productBuilder();
 		product.setFullImageName("fork.jpg");
@@ -118,7 +118,7 @@ public class ProductControllerTest {
 	}
 
 	@Test(expected = FileNotFoundException.class)
-	public void getProductImageFail() throws Exception {
+	public void productImage_tryingToAccessNonexistentFileThrowsFileNotFoundException() throws Exception {
 
 		Product product = productBuilder();
 		product.setFullImageName("a.jpg");
