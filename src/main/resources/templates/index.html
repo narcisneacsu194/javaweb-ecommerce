@@ -18,7 +18,8 @@
                 <ul>
                     <li><a href="#">About</a></li>
                     <li><a href="#">FAQ</a></li>
-                    <li><a name="cartButton" class="button icon-right" href="/cart">View Cart <i class="material-icons">shopping_cart</i></a></li>
+                    <li><a name="cartButton" class="button icon-right" href="/cart">View Cart <i class="material-icons">shopping_cart</i>
+                        <span th:if="${subTotal != null and subTotal != 0.0}" th:text="${'$' + #numbers.formatDecimal(subTotal, 0, 'COMMA', 2, 'POINT')}"></span></a></li>
                 </ul>
             </nav>
         </header>
@@ -45,5 +46,8 @@
 				</ul>
 			</div>
 		</div>
+        <div th:if="${flash != null}" class="container">
+            <div th:classappend="${#strings.toLowerCase(flash.status)}" th:text="${flash.message}" class="flash"></div>
+        </div>
     </body>
 </html>

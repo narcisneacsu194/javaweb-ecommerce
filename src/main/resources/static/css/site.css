@@ -690,7 +690,34 @@ form .error-message {
 	}
 }
 
+/* ==========================================================================
+   Notification Style
+   ========================================================================== */
 
+.container {
+	margin: 0 auto;
+	padding: 0;
+	background: transparent;
+	max-width: 700px;
+}
+
+.flash {
+	margin-top: 2rem;
+	margin-bottom: 2rem;
+	padding: 1rem 2rem;
+	border-radius: 4px;
+	font-size: 1.1rem;
+}
+
+.flash.success {
+	background-color: #7f9e40;
+	color: #f3f6ee;
+}
+
+.flash.failure {
+	background-color: #ac4343;
+	color: #f2e2e2;
+}
 
 
 
