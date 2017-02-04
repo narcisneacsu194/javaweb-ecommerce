@@ -1,19 +1,14 @@
 package com.acme.ecommerce.controller;
 
-import com.acme.ecommerce.Application;
 import com.acme.ecommerce.domain.*;
 import com.acme.ecommerce.service.ProductService;
 import com.acme.ecommerce.service.PurchaseService;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.mock.web.MockHttpSession;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -25,14 +20,10 @@ import java.util.List;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-//@RunWith(SpringJUnit4ClassRunner.class)
-//@SpringApplicationConfiguration(classes = Application.class)
-//@WebAppConfiguration
 public class CheckoutControllerTest {
 
 	@Mock
@@ -50,10 +41,6 @@ public class CheckoutControllerTest {
 	private MockMvc mockMvc;
 
 	private static final BigDecimal ERROR = new BigDecimal(1.792);
-
-	static {
-		System.setProperty("properties.home", "properties");
-	}
 
 	@Before
 	public void setup() {
