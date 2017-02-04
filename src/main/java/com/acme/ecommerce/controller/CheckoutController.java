@@ -1,5 +1,6 @@
 package com.acme.ecommerce.controller;
 
+import com.acme.ecommerce.FlashMessage;
 import com.acme.ecommerce.domain.*;
 import com.acme.ecommerce.service.PurchaseService;
 import org.slf4j.Logger;
@@ -69,7 +70,14 @@ public class CheckoutController {
 	}
 
 	@RequestMapping(path="/coupon", method = RequestMethod.POST)
-	String postCouponCode(Model model, @ModelAttribute(value="couponCode") CouponCode couponCode) {
+	String postCouponCode(Model model, @ModelAttribute(value="couponCode") @Valid CouponCode couponCode, BindingResult result,
+						  RedirectAttributes redirectAttributes) {
+		if(result.hasErrors()){
+			redirectAttributes.addFlashAttribute("flash",
+					new FlashMessage("The coupon code you entered is invalid. Try again!",
+							FlashMessage.Status.FAILURE));
+			return "redirect:coupon";
+		}
     	sCart.setCouponCode(couponCode);
    	
 		return "redirect:shipping";
@@ -235,13 +243,25 @@ public class CheckoutController {
     		model.addAttribute("orderNumber", purchase.getOrderNumber());
     		model.addAttribute("shippingAddress", purchase.getShippingAddress());
     		model.addAttribute("billingAddress", purchase.getBillingAddress());
-    		model.addAttribute("creditCard", purchase.getCreditCardNumber());
+    		model.addAttribute("creditCard", getHiddenCreditCardNumber(purchase.getCreditCardNumber()));
     	} else {
     		logger.error("No purchases Found!");
     		return("redirect:/error");
     	}
     	
 		return "order_confirmation";
+	}
+
+	private String getHiddenCreditCardNumber(String unhiddenCreditCardNumber){
+		Integer creditCardNumberLengthMinusFour = unhiddenCreditCardNumber.length() - 4;
+		String creditCardNumberHidden = "";
+		String creditCardLastFourDigits = unhiddenCreditCardNumber.substring(creditCardNumberLengthMinusFour, unhiddenCreditCardNumber.length());
+		for(int i = 0;i < creditCardNumberLengthMinusFour;i++){
+			creditCardNumberHidden = creditCardNumberHidden.concat("*");
+		}
+		creditCardNumberHidden += creditCardLastFourDigits;
+
+		return creditCardNumberHidden;
 	}
 	
 	@RequestMapping(value = "/email", method = RequestMethod.GET)
@@ -261,15 +281,9 @@ public class CheckoutController {
 	    		subTotal = computeSubtotal(purchase, couponCode);
 	    		shippingCost = computeShippingCost(purchase);
 	    		BigDecimal orderTotal = subTotal.add(shippingCost);
-
-	    		ctx.setVariable("subTotal", subTotal);
-	    		ctx.setVariable("shippingCost", shippingCost);
-	    		ctx.setVariable("orderTotal", orderTotal);
 	    		
 	    		ctx.setVariable("orderNumber", purchase.getOrderNumber());
 	    		ctx.setVariable("shippingAddress", purchase.getShippingAddress());
-	    		ctx.setVariable("billingAddress", purchase.getBillingAddress());
-	    		ctx.setVariable("creditCard", purchase.getCreditCardNumber());
 	    		
 	    		final String htmlContent = this.templateEngine.process("email_confirmation", ctx);
 			
