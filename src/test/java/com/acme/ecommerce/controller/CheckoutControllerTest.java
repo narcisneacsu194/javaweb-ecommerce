@@ -22,18 +22,18 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = Application.class)
-@WebAppConfiguration
+//@RunWith(SpringJUnit4ClassRunner.class)
+//@SpringApplicationConfiguration(classes = Application.class)
+//@WebAppConfiguration
 public class CheckoutControllerTest {
-
-	final String BASE_URL = "http://localhost:8080/";
 
 	@Mock
 	private MockHttpSession session;
@@ -48,6 +48,8 @@ public class CheckoutControllerTest {
 	private CheckoutController checkoutController;
 
 	private MockMvc mockMvc;
+
+	private static final BigDecimal ERROR = new BigDecimal(1.792);
 
 	static {
 		System.setProperty("properties.home", "properties");
@@ -68,8 +70,12 @@ public class CheckoutControllerTest {
 		Purchase purchase = purchaseBuilder(product);
 
 		when(sCart.getPurchase()).thenReturn(purchase);
+
+		BigDecimal subTotal = new BigDecimal(1.99);
+
 		mockMvc.perform(MockMvcRequestBuilders.get("/checkout/coupon")).andDo(print()).andExpect(status().isOk())
-				.andExpect(view().name("checkout_1"));
+				.andExpect(view().name("checkout_1"))
+				.andExpect(model().attribute("subTotal", subTotal));
 	}
 
 	@Test
@@ -81,10 +87,24 @@ public class CheckoutControllerTest {
 	}
 
 	@Test
-	public void postCouponTest() throws Exception {
-		mockMvc.perform(MockMvcRequestBuilders.post("/checkout/coupon").param("couponCode", "abcd")).andDo(print())
+	public void postCouponCode_redirectToShippingPageIfCouponCodeValid() throws Exception {
+		mockMvc.perform(MockMvcRequestBuilders.post("/checkout/coupon").param("code", "abcdf")).andDo(print())
 				.andExpect(status().is3xxRedirection())
 				.andExpect(redirectedUrl("shipping"));
+	}
+
+	@Test
+	public void postCouponCode_redirectToCouponPageIfCouponCodeInvalidLessThanFiveCharacters() throws Exception{
+		mockMvc.perform(MockMvcRequestBuilders.post("/checkout/coupon").param("code", "abcd")).andDo(print())
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("coupon"));
+	}
+
+	@Test
+	public void postCouponCode_redirectToCouponPageIfCouponCodeInvalidMoreThanTenCharacters() throws Exception{
+		mockMvc.perform(MockMvcRequestBuilders.post("/checkout/coupon").param("code", "abcdefghijk")).andDo(print())
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("coupon"));
 	}
 
 	@Test
@@ -100,11 +120,14 @@ public class CheckoutControllerTest {
 		coupon.setCode("abcd");
 		when(sCart.getCouponCode()).thenReturn(coupon);
 
+		BigDecimal subTotal = new BigDecimal(1.99 * 0.9);
+
 		mockMvc.perform(MockMvcRequestBuilders.get("/checkout/shipping")).andDo(print())
 			.andExpect(status().isOk())
-			.andExpect(view().name("checkout_2"));
+			.andExpect(view().name("checkout_2"))
+		.andExpect(model().attribute("subTotal", closeTo(subTotal, ERROR)));
 	}
-	
+
 	@Test
 	public void noCartShippingTest() throws Exception {
 		when(sCart.getPurchase()).thenReturn(null);
@@ -135,7 +158,7 @@ public class CheckoutControllerTest {
 				.param("phoneNumber", "1234567890").param("email", "ab@c.com")).andDo(print())
 				.andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("billing"));
 	}
-	
+
 	@Test
 	public void postShippingTestValidationFail() throws Exception {
 
@@ -157,7 +180,7 @@ public class CheckoutControllerTest {
 						hasProperty("fieldErrorCount", equalTo(9))))
 				.andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("shipping"));
 	}
-	
+
 	@Test
 	public void noCartPostShippingTest() throws Exception {
 		when(sCart.getPurchase()).thenReturn(null);
@@ -184,11 +207,14 @@ public class CheckoutControllerTest {
 
 		when(purchaseService.save(purchase)).thenReturn(purchase);
 
+		BigDecimal subTotal = new BigDecimal(1.99 * 0.9);
+
 		mockMvc.perform(MockMvcRequestBuilders.get("/checkout/billing")).andDo(print())
 			.andExpect(status().isOk())
-			.andExpect(view().name("checkout_3"));
+			.andExpect(view().name("checkout_3"))
+			.andExpect(model().attribute("subTotal", closeTo(subTotal, ERROR)));
 	}
-	
+
 	@Test
 	public void noCartBillingTest() throws Exception {
 		when(sCart.getPurchase()).thenReturn(null);
@@ -243,7 +269,7 @@ public class CheckoutControllerTest {
 				.andExpect(status().is3xxRedirection())
 				.andExpect(redirectedUrl("billing"));
 	}
-	
+
 	@Test
 	public void noCartPostBillingTest() throws Exception {
 		when(sCart.getPurchase()).thenReturn(null);
@@ -265,6 +291,7 @@ public class CheckoutControllerTest {
 		when(productService.findById(1L)).thenReturn(product);
 
 		Purchase purchase = purchaseBuilder(product);
+		purchase.setCreditCardNumber("123456789101112");
 		when(sCart.getPurchase()).thenReturn(purchase);
 
 		CouponCode coupon = new CouponCode();
@@ -277,7 +304,7 @@ public class CheckoutControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(view().name("order_confirmation"));
 	}
-	
+
 	@Test
 	public void noCartConfirmationTest() throws Exception {
 		when(sCart.getPurchase()).thenReturn(null);
@@ -288,8 +315,6 @@ public class CheckoutControllerTest {
 
 	@Test
 	public void emailTest() throws Exception {
-		//unfortunately it is not possible to mock the Thymeleaf Template Engine (final methods problem) which is known and will be fixed in 3.0
-		//so all we test is that the endpoint is accessible.
 		mockMvc.perform(MockMvcRequestBuilders.get("/checkout/email")).andDo(print()).andExpect(status().isOk());
 	}
 
