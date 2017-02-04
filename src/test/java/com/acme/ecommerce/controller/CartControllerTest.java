@@ -1,6 +1,5 @@
 package com.acme.ecommerce.controller;
 
-import com.acme.ecommerce.Application;
 import com.acme.ecommerce.domain.Product;
 import com.acme.ecommerce.domain.ProductPurchase;
 import com.acme.ecommerce.domain.Purchase;
@@ -9,19 +8,14 @@ import com.acme.ecommerce.service.ProductService;
 import com.acme.ecommerce.service.PurchaseService;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.mock.web.MockHttpSession;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,13 +23,7 @@ import java.util.List;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-@RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = Application.class)
-@WebAppConfiguration
 public class CartControllerTest {
-
-	final String BASE_URL = "http://localhost:8080/";
 
 	@Mock
 	private MockHttpSession session;
@@ -46,6 +34,7 @@ public class CartControllerTest {
 	private PurchaseService purchaseService;
 	@Mock
 	private ShoppingCart sCart;
+
 	@InjectMocks
 	private CartController cartController;
 
@@ -74,9 +63,13 @@ public class CartControllerTest {
 		Purchase purchase = purchaseBuilder(product);
 
 		when(sCart.getPurchase()).thenReturn(purchase);
+
+		BigDecimal subTotal = new BigDecimal(1.99);
+
 		mockMvc.perform(MockMvcRequestBuilders.get("/cart")).andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(view().name("cart"));
+				.andExpect(view().name("cart"))
+				.andExpect(model().attribute("subTotal", subTotal));
 	}
 
 	@Test
@@ -94,10 +87,11 @@ public class CartControllerTest {
 
 		when(productService.findById(1L)).thenReturn(product);
 
-		mockMvc.perform(MockMvcRequestBuilders.post("/cart/add").param("quantity", "1").param("productId", "1"))
+		mockMvc.perform(MockMvcRequestBuilders.post("/cart/add").param("quantity", "4").param("productId", "1"))
 				.andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/product/"));
+				.andExpect(redirectedUrl(String.format("/product/detail/%s", product.getId())))
+				.andExpect(flash().attributeExists("flash"));
 	}
 
 	@Test
@@ -111,7 +105,7 @@ public class CartControllerTest {
 	}
 
 	@Test
-	public void updateCartTest() throws Exception {
+	public void updateCartValidationTest() throws Exception {
 		Product product = productBuilder();
 
 		when(productService.findById(1L)).thenReturn(product);
@@ -120,10 +114,11 @@ public class CartControllerTest {
 
 		when(sCart.getPurchase()).thenReturn(purchase);
 
-		mockMvc.perform(MockMvcRequestBuilders.post("/cart/update").param("newQuantity", "2").param("productId", "1"))
+		mockMvc.perform(MockMvcRequestBuilders.post("/cart/update").param("newQuantity", "4").param("productId", "1"))
 				.andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/cart"));
+				.andExpect(redirectedUrl("/cart"))
+				.andExpect(flash().attributeExists("flash"));
 	}
 
 	@Test
@@ -180,7 +175,8 @@ public class CartControllerTest {
 
 		mockMvc.perform(MockMvcRequestBuilders.post("/cart/remove").param("productId", "1")).andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/cart"));
+				.andExpect(redirectedUrl("/cart"))
+				.andExpect(flash().attributeExists("flash"));
 	}
 
 	@Test
@@ -216,7 +212,8 @@ public class CartControllerTest {
 
 		mockMvc.perform(MockMvcRequestBuilders.post("/cart/remove").param("productId", "1")).andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/product/"));
+				.andExpect(redirectedUrl("/product/"))
+				.andExpect(flash().attributeExists("flash"));
 	}
 
 	@Test
@@ -227,6 +224,7 @@ public class CartControllerTest {
 		product2.setId(2L);
 
 		when(productService.findById(1L)).thenReturn(product);
+		when(productService.findById(2L)).thenReturn(product2);
 
 		ProductPurchase pp = new ProductPurchase();
 		pp.setProductPurchaseId(1L);
@@ -252,7 +250,8 @@ public class CartControllerTest {
 
 		mockMvc.perform(MockMvcRequestBuilders.post("/cart/empty")).andDo(print())
 				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/product/"));
+				.andExpect(redirectedUrl("/product/"))
+				.andExpect(flash().attributeExists("flash"));
 	}
 
 	@Test
