@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="x-ua-compatible" content="ie=edge"/>
+    <title>CartShop</title>
+    <link href='https://fonts.googleapis.com/css?family=Roboto:400,700|Roboto+Condensed:400,700' rel='stylesheet' type='text/css'/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <script src="/js/site.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/css/normalize.css" th:href="@{/css/normalize.css}"/>
+    <link rel="stylesheet" type="text/css" href="/static/css/site.css" th:href="@{/css/site.css}"/>
+</head>
+<body>
+<header>
+    <a class="logo" href="/product/">CartShop</a>
+    <nav>
+        <ul>
+            <li><a href="#">About</a></li>
+            <li><a href="#">FAQ</a></li>
+            <li><a class="button icon-right" href="/cart">View Cart <i class="material-icons">shopping_cart</i>
+                <span th:if="${subTotal != null and subTotal != 0.0}" th:text="${'$' + #numbers.formatDecimal(subTotal, 0, 'COMMA', 2, 'POINT')}"></span></a></li>
+        </ul>
+    </nav>
+</header>
+<section class="product-detail">
+    <div class="item-details">
+        <h2><span>The product wasn't found.</span></h2>
+    </div>
+</section>
+</body>
+</html>
