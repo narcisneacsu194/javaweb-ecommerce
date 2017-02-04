@@ -2,11 +2,14 @@ package com.acme.ecommerce.controller;
 
 import com.acme.ecommerce.domain.Product;
 import com.acme.ecommerce.domain.ProductPurchase;
+import com.acme.ecommerce.domain.Purchase;
+import com.acme.ecommerce.domain.ShoppingCart;
 import com.acme.ecommerce.service.ProductService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,9 +24,11 @@ import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.math.BigDecimal;
 
 @Controller
 @RequestMapping("/product")
+@Scope("request")
 public class ProductController {
 	
 	final Logger logger = LoggerFactory.getLogger(ProductController.class);
@@ -36,6 +41,9 @@ public class ProductController {
 	
 	@Autowired
 	HttpSession session;
+
+	@Autowired
+	private ShoppingCart sCart;
 	
 	@Value("${imagePath:/images/}")
 	String imagePath;
@@ -44,7 +52,16 @@ public class ProductController {
     public String index(Model model, @RequestParam(value = "page", required = false) Integer page) {
     	logger.debug("Getting Product List");
     	logger.debug("Session ID = " + session.getId());
-    	
+
+		Purchase purchase = sCart.getPurchase();
+    	BigDecimal subTotal = new BigDecimal(0);
+		if(purchase != null){
+			for (ProductPurchase pp : purchase.getProductPurchases()) {
+				logger.debug("cart has " + pp.getQuantity() + " of " + pp.getProduct().getName());
+				subTotal = subTotal.add(pp.getProduct().getPrice().multiply(new BigDecimal(pp.getQuantity())));
+			}
+			model.addAttribute("subTotal", subTotal);
+		}
 		// Evaluate page. If requested parameter is null or less than 0 (to
 		// prevent exception), return initial size. Otherwise, return value of
 		// param. decreased by 1.
@@ -60,6 +77,16 @@ public class ProductController {
     @RequestMapping(path = "/detail/{id}", method = RequestMethod.GET)
     public String productDetail(@PathVariable long id, Model model) {
     	logger.debug("Details for Product " + id);
+
+		Purchase purchase = sCart.getPurchase();
+		BigDecimal subTotal = new BigDecimal(0);
+		if(purchase != null){
+			for (ProductPurchase pp : purchase.getProductPurchases()) {
+				logger.debug("cart has " + pp.getQuantity() + " of " + pp.getProduct().getName());
+				subTotal = subTotal.add(pp.getProduct().getPrice().multiply(new BigDecimal(pp.getQuantity())));
+			}
+			model.addAttribute("subTotal", subTotal);
+		}
     	
     	Product returnProduct = productService.findById(id);
     	if (returnProduct != null) {
@@ -105,4 +132,9 @@ public class ProductController {
     	logger.warn("Happy Easter! Someone actually clicked on About.");
     	return("about");
     }
+
+    @RequestMapping(path = "/error")
+	public String displayError(){
+		return "error";
+	}
 }
